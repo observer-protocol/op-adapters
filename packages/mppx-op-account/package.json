@@ -1,0 +1,73 @@
+{
+  "name": "@observer-protocol/mppx-op-account",
+  "version": "0.3.1",
+  "description": "Observer Protocol delegation-credential enforcement for MPP / Tempo (mppx). A custom viem account that verifies a signed agent mandate against each session escrow and voucher at the signer boundary, fail-closed, before signing.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist/",
+    "docs/SCOPE.md",
+    "docs/SUPPORT-MATRIX.md",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "npm run clean && esbuild src/index.ts --bundle --platform=node --target=node18 --format=esm --external:viem --outfile=dist/index.mjs && esbuild src/index.ts --bundle --platform=node --target=node18 --format=cjs --external:viem --outfile=dist/index.cjs && tsc --emitDeclarationOnly --outDir dist",
+    "typecheck": "tsc --noEmit",
+    "check:core-sync": "node scripts/check-core-sync.mjs",
+    "fixtures": "node test/fixtures/gen.mjs",
+    "test": "npm run typecheck && npm run build && npm run fixtures && node test/run.mjs",
+    "livefire": "node harness/live-fire.mjs",
+    "prepublishOnly": "bash ../../scripts/refuse-dirty-publish.sh && npm run check:core-sync && npm run typecheck && npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/observer-protocol/op-adapters.git",
+    "directory": "packages/mppx-op-account"
+  },
+  "keywords": [
+    "mpp",
+    "machine-payments-protocol",
+    "tempo",
+    "mppx",
+    "observer-protocol",
+    "agent-wallet",
+    "viem",
+    "verifiable-credentials",
+    "did",
+    "delegation",
+    "eddsa-jcs-2022"
+  ],
+  "peerDependencies": {
+    "viem": ">=2.0.0"
+  },
+  "dependencies": {
+    "@observer-protocol/policy-engine": ">=0.4.0 <1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "esbuild": "^0.21.0",
+    "mppx": "^0.7.0",
+    "typescript": "^5.4.0",
+    "viem": "^2.52.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "homepage": "https://github.com/observer-protocol/op-adapters/tree/main/packages/mppx-op-account#readme"
+}

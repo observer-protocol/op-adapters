@@ -1,0 +1,6 @@
+node_modules/
+dist/
+test/fixtures/out/
+.cache/
+*.log
+.demo-sandbox/

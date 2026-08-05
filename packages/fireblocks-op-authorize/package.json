@@ -1,0 +1,46 @@
+{
+  "name": "@observer-protocol/fireblocks-op-authorize",
+  "version": "0.1.0",
+  "description": "Observer Protocol as the authorization gate at the Fireblocks API Co-Signer callback boundary. Fireblocks holds the key; OP holds none; an OP deny means no signature exists.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "pretest": "tsup",
+    "test": "node --test",
+    "prepublishOnly": "bash ../../scripts/refuse-dirty-publish.sh && npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "@observer-protocol/policy-engine": "^0.3.0",
+    "jose": "^5.9.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/observer-protocol/op-adapters.git",
+    "directory": "packages/fireblocks-op-authorize"
+  },
+  "homepage": "https://github.com/observer-protocol/op-adapters/tree/main/packages/fireblocks-op-authorize#readme"
+}

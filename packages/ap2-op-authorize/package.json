@@ -1,0 +1,47 @@
+{
+  "name": "@observer-protocol/ap2-op-authorize",
+  "version": "0.1.0",
+  "description": "Observer Protocol authorization for inbound AP2 payment mandates: verify the SD-JWT mandate, normalize its constraints into the shared policy core, enforce fail-closed, and debit the shared cross-rail ledger.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "pretest": "tsup",
+    "test": "node --test test/*.test.mjs",
+    "prepublishOnly": "bash ../../scripts/refuse-dirty-publish.sh"
+  },
+  "dependencies": {
+    "@observer-protocol/policy-engine": "^0.3.0",
+    "@observer-protocol/sd-jwt-substrate": "file:../op-policy-engine/packages/sd-jwt-substrate"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/observer-protocol/op-adapters.git",
+    "directory": "packages/ap2-op-authorize"
+  },
+  "homepage": "https://github.com/observer-protocol/op-adapters/tree/main/packages/ap2-op-authorize#readme"
+}

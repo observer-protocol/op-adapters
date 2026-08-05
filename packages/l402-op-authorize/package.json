@@ -1,0 +1,69 @@
+{
+  "name": "@observer-protocol/l402-op-authorize",
+  "version": "0.4.0",
+  "description": "Observer Protocol authorization for L402 / Lightning (lnget buyer + Aperture seller). Verifies a signed, revocable did:key delegation against the proposed L402 payment at the buyer side, fail-closed, and verifies a holder-bound credential presentation at the seller side. Same vendored core as ows-op-verify and mppx-op-account: only the decoder changed.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist/",
+    "docs/SCOPE.md",
+    "docs/SUPPORT-MATRIX.md",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=esm --external:viem --outfile=dist/index.mjs && esbuild src/index.ts --bundle --platform=node --target=node18 --format=cjs --external:viem --outfile=dist/index.cjs && tsc --emitDeclarationOnly --outDir dist",
+    "typecheck": "tsc --noEmit",
+    "check:core-sync": "node scripts/check-core-sync.mjs",
+    "fixtures": "node test/fixtures/gen.mjs",
+    "test": "npm run typecheck && npm run build && npm run fixtures && node test/run.mjs",
+    "demo": "node demo/scenes.mjs",
+    "prepublishOnly": "bash ../../scripts/refuse-dirty-publish.sh && npm run check:core-sync && npm run typecheck && npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/observer-protocol/op-adapters.git",
+    "directory": "packages/l402-op-authorize"
+  },
+  "keywords": [
+    "l402",
+    "lsat",
+    "lightning",
+    "aperture",
+    "lnget",
+    "taproot-assets",
+    "usdt",
+    "agentic-commerce",
+    "observer-protocol",
+    "verifiable-credentials",
+    "did-key",
+    "delegation",
+    "eddsa-jcs-2022"
+  ],
+  "dependencies": {
+    "@observer-protocol/policy-engine": ">=0.4.0 <1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "esbuild": "^0.21.0",
+    "typescript": "^5.4.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "homepage": "https://github.com/observer-protocol/op-adapters/tree/main/packages/l402-op-authorize#readme"
+}
