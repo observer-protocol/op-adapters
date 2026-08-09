@@ -14,11 +14,19 @@
 >
 > **Versions.** Published `0.4.1`.
 >
-> **Provenance.** Versions `0.1.0` and `0.4.1` resolve in
-> [`observer-protocol/wdk-op-policy`](https://github.com/observer-protocol/wdk-op-policy)
-> (archived, read-only). **`0.2.0`, `0.3.0`, `0.3.1`, `0.3.2` and `0.4.0` resolve only in a private
-> repository and cannot be fetched from outside the organisation.** The next release onward resolves
-> here.
+> **Provenance. Every published version resolves publicly.** All seven, `0.1.0` through `0.4.1`,
+> resolve in [`observer-protocol/wdk-op-policy`](https://github.com/observer-protocol/wdk-op-policy),
+> and each is reachable from a tag named for its version. `0.1.0` and `0.4.1` sit on `main`; `0.2.0`,
+> `0.3.0`, `0.3.1`, `0.3.2` and `0.4.0` sit on the unmerged `provenance/pre-monorepo` branch, a
+> divergent lineage rather than an ancestor of `main`, which is why they are tagged. The next release
+> onward resolves here.
+>
+> *Correction 2026-08-09: this block previously said those five versions "resolve only in a private
+> repository and cannot be fetched from outside the organisation", and described the repository as
+> "(archived, read-only)". Both were false when read. The five were made publicly resolvable on
+> 2026-08-08 and that work is what this sentence was describing, so the fix left the description of
+> the old state in place at the URL a consumer checking provenance lands on. The repository is not
+> archived: `archived=false`, measured 2026-08-09.*
 > The Observer Protocol API's rail registry no longer carries a pin. **Ruled 2026-08-05:** the
 > field was named `version` and read as "these versions are known to work together", while
 > nothing enforced or checked it — the running server never reads it. It is now
