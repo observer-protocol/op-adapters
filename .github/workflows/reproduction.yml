@@ -90,11 +90,40 @@ jobs:
       # The guard refuses a branch with no upstream BEFORE it reaches any later check, and
       # actions/checkout does not configure upstream tracking. Without this the self-tests below
       # would go red for the wrong reason and read as "the guard is broken".
-      - name: Give HEAD an upstream, so the guard reaches the checks under test
+      #
+      # ─── THIS STEP USED TO CHECK OUT origin/main, WHICH TESTED THE WRONG TREE ────────────────────
+      # Measured 2026-08-09 on run 31296563830. The workflow STEPS come from the pull request, but
+      # `git checkout -B guard-selftest origin/main` replaced the working tree with main's, so every
+      # assertion below ran against main's copy of scripts/. The steps were the PR's and the code
+      # under test was not.
+      #
+      # That is invisible while a PR does not touch the guard, and it inverts the moment one does:
+      # a pull request that BROKE refuse-dirty-publish.sh would have its self-tests pass, because
+      # they would be exercising the unbroken copy on main. It surfaced only because this PR added
+      # a file that main does not have, so the step failed with "No such file or directory" instead
+      # of quietly passing.
+      #
+      # Checking out the head of the branch under test gives HEAD an upstream AND keeps the tree
+      # that is actually being reviewed. On a push to main the two are the same thing.
+      - name: Give HEAD an upstream, WITHOUT discarding the tree under test
         run: |
-          git fetch origin main
-          git checkout -B guard-selftest origin/main
-          git branch --set-upstream-to=origin/main guard-selftest
+          BRANCH="${{ github.head_ref || github.ref_name }}"
+          git fetch origin "$BRANCH"
+          git checkout -B guard-selftest "origin/$BRANCH"
+          git branch --set-upstream-to="origin/$BRANCH" guard-selftest
+          echo "self-tests are running against origin/$BRANCH at $(git rev-parse --short HEAD)"
+
+      # The tree under test must be THIS branch's, not whatever the previous step happened to leave.
+      # Without this line the failure above is silent again the next time someone edits that step.
+      - name: The checked-out tree must be the one under review
+        run: |
+          WANT="${{ github.event.pull_request.head.sha || github.sha }}"
+          GOT="$(git rev-parse HEAD)"
+          if [ "$WANT" != "$GOT" ]; then
+            echo "::error::self-tests are running against $GOT but the tree under review is $WANT — they would be testing the wrong code"
+            exit 1
+          fi
+          echo "tree under test confirmed: $GOT"
 
       - name: The guard must refuse an already-published version FOR THAT REASON
         working-directory: packages/x402-op-authorize
