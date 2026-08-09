@@ -1,0 +1,29 @@
+# HOW MANY PACKAGES MUST ACTUALLY BE MEASURED FOR A GREEN CI RUN TO MEAN ANYTHING.
+#
+# scripts/verify-reproduction.sh exits 0 for a package whose declared version is not published:
+# there is no published artifact to compare against, so there is nothing to do. That is correct,
+# and it is also invisible. At job level a skip and a reproduction are the same green tick.
+#
+# Measured 2026-08-09 on run 31289030963: seven matrix jobs, five green, and TWO of those five
+# were skips. Coverage had dropped from six packages to five and no signal said so. The drop was
+# caused by a CORRECT fix (x402-op-authorize was bumped off the 0.4.0 it had drifted from), which
+# is the point: nothing went wrong, and coverage fell anyway.
+#
+# This number is the floor. It is a DECISION, not a measurement, and it lives in a committed file
+# so that lowering it is an edit someone has to make and a reviewer has to see. If a version bump
+# takes another package below this line, CI goes red and the choice to accept less coverage gets
+# made deliberately instead of by side effect.
+#
+# RAISE IT when a package is published and starts being measured.
+# LOWER IT only as an explicit, reviewed decision, and say here which package left and why.
+#
+# Current population, measured 2026-08-09:
+#   measured (5) : fireblocks-op-authorize@0.1.0, l402-op-authorize@0.4.0, mppx-op-account@0.3.1,
+#                  ows-op-verify@0.3.0, wdk-op-policy@0.4.1
+#   skipped  (2) : ap2-op-authorize@0.1.0 (never published),
+#                  x402-op-authorize@0.4.1-rc.0 (bumped off a drifted 0.4.0, not yet published)
+#
+# l402-op-authorize counts as MEASURED even though its job is red. The comparison ran and returned
+# an answer. A red measurement is coverage; a skip is not.
+
+5

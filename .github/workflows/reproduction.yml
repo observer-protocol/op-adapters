@@ -45,7 +45,37 @@ jobs:
           node-version: 22.22.3
 
       - name: Reproduce ${{ matrix.package }}
+        env:
+          REPRO_RESULT_FILE: ${{ runner.temp }}/result.txt
         run: bash scripts/verify-reproduction.sh packages/${{ matrix.package }}
+
+      # if: always() ON PURPOSE. A job that failed still measured something, and a job that died
+      # without writing anything must be visible as "no result" rather than absent. Uploading only
+      # on success would make the population job blind to exactly the runs worth counting.
+      - name: Record the outcome for the population assertion
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: repro-result-${{ matrix.package }}
+          path: ${{ runner.temp }}/result.txt
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ─── HOW MANY PACKAGES WERE ACTUALLY CHECKED? ────────────────────────────────────────────────────
+  # The matrix above reports whether each job PASSED. It cannot report how many packages were
+  # MEASURED, because a skip passes. Measured 2026-08-09: five green jobs, two of them skips.
+  population:
+    needs: reproduce
+    if: always()          # the count matters most on the runs where something went red
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: results
+          pattern: repro-result-*
+      - name: Assert the measured population
+        run: bash scripts/assert-reproduction-population.sh results
 
   # The publish guard is exercised here too, so its own failure modes stay live rather than being
   # discovered at publish time by whoever is publishing.
@@ -102,3 +132,55 @@ jobs:
             exit 1
           fi
           echo "negative control fired, naming the instrument"
+
+      # ─── THE POPULATION ASSERTION MUST BE ABLE TO FAIL ──────────────────────────────────────────
+      # A coverage check that cannot go red is worth less than no coverage check, because it reads
+      # as coverage. These cases are synthetic on purpose: they exercise the assertion itself rather
+      # than the state of this repo today, so the assertion stays honest as the real population moves.
+      - name: The population assertion must fail when everything is skipped
+        run: |
+          FLOOR="$(grep -vE '^\s*#|^\s*$' scripts/reproduction-floor.txt | head -1 | tr -d '[:space:]')"
+          mkdir -p /tmp/allskip
+          for d in packages/*/; do
+            p="$(basename "${d%/}")"
+            mkdir -p "/tmp/allskip/repro-result-$p"
+            echo "skipped $p@0.0.0-synthetic" > "/tmp/allskip/repro-result-$p/result.txt"
+          done
+          OUT="$(bash scripts/assert-reproduction-population.sh /tmp/allskip 2>&1 || true)"
+          echo "$OUT"
+          # ASSERT THE REASON. A bare "it exited non-zero" would also be satisfied by the missing-result
+          # branch, so this requires the floor comparison specifically, quoting the floor it read.
+          if ! printf '%s' "$OUT" | grep -q "only 0 package(s) were actually measured against the registry; the floor is ${FLOOR}"; then
+            echo "::error::a matrix where every package is unpublished did not trip the floor. The coverage check cannot fail, so its green means nothing."
+            exit 1
+          fi
+          echo "floor tripped at 0 measured, as intended"
+
+      - name: The population assertion must fail when a package reports nothing
+        run: |
+          mkdir -p /tmp/missing
+          FIRST=""
+          for d in packages/*/; do
+            p="$(basename "${d%/}")"
+            if [ -z "$FIRST" ]; then FIRST="$p"; continue; fi     # this one deliberately reports nothing
+            mkdir -p "/tmp/missing/repro-result-$p"
+            echo "measured $p@0.0.0-synthetic" > "/tmp/missing/repro-result-$p/result.txt"
+          done
+          OUT="$(bash scripts/assert-reproduction-population.sh /tmp/missing 2>&1 || true)"
+          echo "$OUT"
+          if ! printf '%s' "$OUT" | grep -q "1 package(s) in packages/ produced no reproduction result"; then
+            echo "::error::a package that reported nothing was not counted as missing — an omitted or crashed job would read as covered"
+            exit 1
+          fi
+          echo "missing-result branch fired for $FIRST, as intended"
+
+      - name: The population assertion must PASS when the floor is met
+        run: |
+          mkdir -p /tmp/ok
+          for d in packages/*/; do
+            p="$(basename "${d%/}")"
+            mkdir -p "/tmp/ok/repro-result-$p"
+            echo "measured $p@0.0.0-synthetic" > "/tmp/ok/repro-result-$p/result.txt"
+          done
+          # Without this the two cases above are satisfied by an assertion that always fails.
+          bash scripts/assert-reproduction-population.sh /tmp/ok
