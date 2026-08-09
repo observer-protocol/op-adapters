@@ -18,6 +18,11 @@
 > or calls it. A registry entry is not a consumer.
 >
 > **Versions.** Published `@observer-protocol/ows-op-verify@0.3.0`.
+>
+> **Provenance.** Versions `0.1.0` through `0.3.0` resolve in
+> [`observer-protocol/ows-op-policy`](https://github.com/observer-protocol/ows-op-policy)
+> (archived, read-only — the repository name differs from the package name). The next release onward
+> resolves here.
 > The Observer Protocol API's rail registry no longer carries a pin. **Ruled 2026-08-05:** the
 > field was named `version` and read as "these versions are known to work together", while
 > nothing enforced or checked it — the running server never reads it. It is now

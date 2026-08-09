@@ -1,5 +1,11 @@
 # ap2-op-authorize
 
+> **Provenance.** Never published. Its first release will be the first version whose `gitHead`
+> resolves anywhere, and it will resolve here. The archived
+> [`observer-protocol/ap2-op-authorize`](https://github.com/observer-protocol/ap2-op-authorize)
+> holds pre-publication history only.
+
+
 > **SUPPORT TIER — REFERENCE IMPLEMENTATION.** Not under active maintenance, and no production
 > consumer. Read it, run it, copy from it; do not assume support.
 >
