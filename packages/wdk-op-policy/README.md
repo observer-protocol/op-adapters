@@ -13,6 +13,12 @@
 > all; its own README says so. Declared, not consumed.
 >
 > **Versions.** Published `0.4.1`.
+>
+> **Provenance.** Versions `0.1.0` and `0.4.1` resolve in
+> [`observer-protocol/wdk-op-policy`](https://github.com/observer-protocol/wdk-op-policy)
+> (archived, read-only). **`0.2.0`, `0.3.0`, `0.3.1`, `0.3.2` and `0.4.0` resolve only in a private
+> repository and cannot be fetched from outside the organisation.** The next release onward resolves
+> here.
 > The Observer Protocol API's rail registry no longer carries a pin. **Ruled 2026-08-05:** the
 > field was named `version` and read as "these versions are known to work together", while
 > nothing enforced or checked it — the running server never reads it. It is now

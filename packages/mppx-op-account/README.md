@@ -8,6 +8,12 @@
 > in the Observer Protocol estate or on the production host.
 >
 > **Versions.** Published `0.3.1`.
+>
+> **Provenance.** Versions `0.1.0` and `0.3.1` resolve in
+> [`observer-protocol/mppx-op-account`](https://github.com/observer-protocol/mppx-op-account) on
+> `main`. `0.2.0`, `0.2.1` and `0.3.0` were published from a private build repository and resolve
+> there too, on the unmerged `provenance/pre-monorepo` branch pushed 2026-08-08 — a divergent lineage,
+> not an ancestor of that repository's `main`. The next release onward resolves here.
 > The Observer Protocol API's rail registry no longer carries a pin. **Ruled 2026-08-05:** the
 > field was named `version` and read as "these versions are known to work together", while
 > nothing enforced or checked it — the running server never reads it. It is now

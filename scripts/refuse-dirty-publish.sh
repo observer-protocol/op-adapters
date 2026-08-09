@@ -257,6 +257,131 @@ STALE_EOF
   exit 1
 fi
 
+# ─── THE VERSION IN package.json MUST NOT ALREADY EXIST ON THE REGISTRY ──────────────────
+#
+# npm rejects a republish of an existing version, so this cannot prevent a corrupted publish.
+# What it prevents is a REPOSITORY THAT LIES BETWEEN PUBLISHES. Measured 2026-08-08:
+# packages/x402-op-authorize sat at "0.4.0" while carrying four source files that differ from
+# the published 0.4.0 — including a widened exported union (cancel-authorization gained
+# authorizer/nonce). Anyone reading this repo to learn what 0.4.0 does got a wrong answer, and
+# nothing here objected. The other five checks were all green: the tree was clean, pushed, the
+# upstream matched, no linked dependency, the core was current.
+#
+# The failure surfaces today only as a 403 at publish time, which is the wrong moment and the
+# wrong audience. This makes it a fact stated in the repo instead.
+#
+# HOW THIS READS THE REGISTRY, AND WHY IT IS WRITTEN THIS WAY.
+# `npm view <pkg>@<ver>` prints its E404 error object to STDOUT and exits 1. So the obvious
+# implementation — "non-empty output means the version exists" — scores a MISSING version as
+# PRESENT and would refuse every first publish of every new package. The same shape cost a full
+# report on 2026-08-08 when a `gh api` error body was scored as a resolved commit.
+# So: key on the EXIT CODE plus the SHAPE of what came back, never on emptiness.
+registry_state() {                       # $1=name $2=version -> taken | free | unknown
+  local out rc
+  out="$(npm view "$1@$2" version --json 2>/dev/null)"; rc=$?
+  if [ $rc -eq 0 ] && printf '%s' "$out" | grep -qE "^\"$(printf '%s' "$2" | sed 's/[.[\*^$]/\\&/g')\"$"; then
+    echo taken; return
+  fi
+  if [ $rc -ne 0 ] && printf '%s' "$out" | grep -q '"code": *"E404"'; then
+    echo free; return
+  fi
+  echo unknown
+}
+
+PKG_NAME="$(node -p 'require("./package.json").name' 2>/dev/null)"
+PKG_VER="$(node -p 'require("./package.json").version' 2>/dev/null)"
+if [ -z "${PKG_NAME}" ] || [ -z "${PKG_VER}" ]; then
+  echo "  REFUSING: cannot read name/version from package.json." >&2
+  exit 1
+fi
+
+# NEGATIVE CONTROL, RUN BEFORE THE ANSWER IS TRUSTED.
+# A probe that has silently stopped reaching the registry returns the same shape as "free" and
+# would wave every publish through. This asserts the reader can still tell the two apart. It is
+# the line that would have caught the gh-error-body defect, so it is not decoration.
+CONTROL_FREE="$(registry_state "${PKG_NAME}" "0.0.0-guard-negative-control")"
+if [ "${CONTROL_FREE}" != "free" ]; then
+  cat >&2 <<CONTROL_EOF
+
+  REFUSING TO PUBLISH: THE REGISTRY CHECK'S OWN CONTROL FAILED
+
+  A version that cannot exist ("0.0.0-guard-negative-control") read as "${CONTROL_FREE}"
+  rather than "free". The check cannot distinguish a missing version from a failed lookup,
+  so its verdict on the real version means nothing.
+
+  This is refusing because the INSTRUMENT is broken, not because the package is.
+
+CONTROL_EOF
+  exit 1
+fi
+
+# The positive control needs a version known to exist. Derive it from the registry rather than
+# hardcoding a sentinel: the package's own first published version. A package that has never
+# been published has none, and that is the E404-pass case below, which the free control already
+# exercised end to end.
+ALL_VERS="$(npm view "${PKG_NAME}" versions --json 2>/dev/null)"; ALL_RC=$?
+if [ $ALL_RC -eq 0 ] && printf '%s' "${ALL_VERS}" | grep -q '^\['; then
+  FIRST_VER="$(printf '%s' "${ALL_VERS}" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const a=JSON.parse(s);process.stdout.write(Array.isArray(a)?a[0]:String(a))}catch{}})' 2>/dev/null)"
+  if [ -n "${FIRST_VER}" ]; then
+    CONTROL_TAKEN="$(registry_state "${PKG_NAME}" "${FIRST_VER}")"
+    if [ "${CONTROL_TAKEN}" != "taken" ]; then
+      cat >&2 <<CONTROL2_EOF
+
+  REFUSING TO PUBLISH: THE REGISTRY CHECK'S POSITIVE CONTROL FAILED
+
+  ${PKG_NAME}@${FIRST_VER} is published, but the check read it as "${CONTROL_TAKEN}".
+  A check that cannot see a version that is definitely there cannot be trusted to see the
+  one you are about to publish.
+
+CONTROL2_EOF
+      exit 1
+    fi
+  fi
+elif [ $ALL_RC -ne 0 ] && printf '%s' "${ALL_VERS}" | grep -q '"code": *"E404"'; then
+  : # never published: the version is necessarily free. Fall through to the verdict below.
+else
+  cat >&2 <<UNREACH_EOF
+
+  REFUSING TO PUBLISH: CANNOT ESTABLISH WHAT IS ALREADY PUBLISHED
+
+  Listing versions of ${PKG_NAME} neither succeeded nor returned a clean E404.
+  Fail-closed: an unreachable registry is not evidence that this version is free.
+
+UNREACH_EOF
+  exit 1
+fi
+
+case "$(registry_state "${PKG_NAME}" "${PKG_VER}")" in
+  taken)
+    cat >&2 <<TAKEN_EOF
+
+  REFUSING TO PUBLISH: ${PKG_NAME}@${PKG_VER} IS ALREADY PUBLISHED
+
+  npm will reject this publish, and that rejection is not the problem. The problem is that
+  this repository currently claims to be version ${PKG_VER} while its tree may differ from the
+  artifact that was published under that number, and every reader gets that wrong.
+
+  Bump the version. Prefer a prerelease while work is in progress, e.g. ${PKG_VER}-rc.0,
+  which no caret range resolves to:
+
+      npm version prerelease --preid rc     # bumps, commits and tags atomically
+
+TAKEN_EOF
+    exit 1
+    ;;
+  unknown)
+    cat >&2 <<UNKNOWN_EOF
+
+  REFUSING TO PUBLISH: CANNOT ESTABLISH WHETHER ${PKG_NAME}@${PKG_VER} EXISTS
+
+  The registry lookup neither confirmed the version nor returned a clean E404.
+  Fail-closed, for the same reason as the other checks here: not knowing is not permission.
+
+UNKNOWN_EOF
+    exit 1
+    ;;
+esac
+
 if [ -z "${DIRT}" ]; then
   echo "publish guard: working tree clean at $(git rev-parse --short HEAD). gitHead will identify the source."
   exit 0

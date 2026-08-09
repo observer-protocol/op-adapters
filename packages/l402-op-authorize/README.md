@@ -15,6 +15,10 @@
 > production issuer is offline. **Proven is not deployed.**
 >
 > **Versions.** Published `0.4.0`; its consumer declares `^0.3.2`.
+>
+> **Provenance.** Versions `0.1.0` through `0.4.0` resolve in
+> [`observer-protocol/l402-op-authorize`](https://github.com/observer-protocol/l402-op-authorize)
+> (archived, read-only). The next release onward resolves here.
 > The Observer Protocol API's rail registry no longer carries a pin. **Ruled 2026-08-05:** the
 > field was named `version` and read as "these versions are known to work together", while
 > nothing enforced or checked it — the running server never reads it. It is now

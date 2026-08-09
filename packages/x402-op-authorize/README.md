@@ -8,7 +8,12 @@
 > through a `file:` dependency. No consumer outside our harnesses was found in the Observer Protocol
 > estate or on the production host.
 >
-> **Versions.** Published `0.4.0`.
+> **Versions.** Published `0.4.0`. This tree is `0.4.1-rc.0`: it carries changes not in `0.4.0`.
+>
+> **Provenance.** Versions `0.1.0` through `0.4.0` resolve in
+> [`observer-protocol/x402-op-authorize`](https://github.com/observer-protocol/x402-op-authorize)
+> (archived, read-only). `0.4.1` onward resolve here, in `observer-protocol/op-adapters` under
+> `packages/x402-op-authorize`.
 > The Observer Protocol API's rail registry no longer carries a pin. **Ruled 2026-08-05:** the
 > field was named `version` and read as "these versions are known to work together", while
 > nothing enforced or checked it — the running server never reads it. It is now

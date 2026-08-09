@@ -1,6 +1,6 @@
 {
   "name": "@observer-protocol/x402-op-authorize",
-  "version": "0.4.0",
+  "version": "0.4.1-rc.0",
   "description": "Observer Protocol authorization for x402 payments. Wraps the agent's EVM signing account and verifies a signed, revocable delegation against the proposed x402 payment at the signer boundary, fail-closed: a denied payment is never signed, so it can never settle. Shared @observer-protocol/policy-engine core: only the decoder changed.",
   "license": "MIT",
   "type": "module",

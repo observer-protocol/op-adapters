@@ -1,5 +1,11 @@
 # fireblocks-op-authorize
 
+> **Provenance.** `0.1.0`, the first and only published version, was published from here and resolves
+> in `observer-protocol/op-adapters`. The archived
+> [`observer-protocol/fireblocks-op-authorize`](https://github.com/observer-protocol/fireblocks-op-authorize)
+> holds pre-publication history only; no published version resolves there.
+
+
 > **SUPPORT TIER — REFERENCE IMPLEMENTATION, NO CONSUMER FOUND.** Not under active maintenance.
 > Read it, run it, copy from it; do not assume support.
 >
