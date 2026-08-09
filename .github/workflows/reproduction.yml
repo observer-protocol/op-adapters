@@ -1,0 +1,104 @@
+# Does each package's tree reproduce the published artifact it claims?
+#
+# This repo had NO CI at all until this workflow. The publish guard
+# (scripts/refuse-dirty-publish.sh) runs only in prepublishOnly, so nothing checked a tree between
+# releases — which is exactly when x402-op-authorize drifted from the 0.4.0 it declared.
+name: reproduction
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  reproduce:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false          # one drifted package must not hide the state of the other six
+      matrix:
+        package:
+          - ap2-op-authorize
+          - fireblocks-op-authorize
+          - l402-op-authorize
+          - mppx-op-account
+          - ows-op-verify
+          - wdk-op-policy
+          - x402-op-authorize
+    steps:
+      - uses: actions/checkout@v4
+
+      # ─── NODE IS PINNED HERE BECAUSE NOTHING ELSE PINS IT ────────────────────────────────
+      # Reproduction is relative to a toolchain. esbuild and typescript ARE pinned, by each
+      # package's committed package-lock.json, so they are not the risk. Node is pinned by
+      # NOTHING in the published artifact: no `engines` floor is a build guarantee, and a
+      # consumer on a different Node major may legitimately fail to reproduce a tarball we
+      # consider correct.
+      #
+      # 22.22.3 is the version under which byte-identical reproduction was MEASURED on
+      # 2026-08-08 (x402-op-authorize@0.4.0, all 14 files and the .tgz itself). Changing this
+      # line changes what "reproduces" means. If you bump it, re-measure against a known-good
+      # package first and record the result here — a green run under an unmeasured toolchain
+      # proves less than it appears to.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.3
+
+      - name: Reproduce ${{ matrix.package }}
+        run: bash scripts/verify-reproduction.sh packages/${{ matrix.package }}
+
+  # The publish guard is exercised here too, so its own failure modes stay live rather than being
+  # discovered at publish time by whoever is publishing.
+  guard-self-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.3
+      # The guard refuses a branch with no upstream BEFORE it reaches any later check, and
+      # actions/checkout does not configure upstream tracking. Without this the self-tests below
+      # would go red for the wrong reason and read as "the guard is broken".
+      - name: Give HEAD an upstream, so the guard reaches the checks under test
+        run: |
+          git fetch origin main
+          git checkout -B guard-selftest origin/main
+          git branch --set-upstream-to=origin/main guard-selftest
+
+      - name: The guard must refuse an already-published version FOR THAT REASON
+        working-directory: packages/x402-op-authorize
+        run: |
+          npm ci --silent
+          node -e '
+            const fs=require("fs"); const p=JSON.parse(fs.readFileSync("package.json","utf8"));
+            p.version="0.4.0";           // a version that IS published
+            fs.writeFileSync("package.json", JSON.stringify(p,null,2));
+          '
+          # ASSERT THE REASON, NOT THE REFUSAL. Editing package.json makes the tree dirty, so the
+          # guard refuses either way — the dirty-tree check alone would satisfy a bare "it exited
+          # non-zero" assertion, and this job would stay green with the registry check deleted.
+          # An earlier gate in a fail-fast chain hides every later one; a refusal is evidence about
+          # whichever check fired, never about the one under test.
+          OUT="$(bash ../../scripts/refuse-dirty-publish.sh 2>&1 || true)"
+          echo "$OUT"
+          if ! printf '%s' "$OUT" | grep -q "IS ALREADY PUBLISHED"; then
+            echo "::error::the guard did not refuse for the registry reason — it refused for something else, or not at all"
+            exit 1
+          fi
+          echo "guard refused with the already-published reason, as intended"
+          git checkout -- package.json
+
+      - name: The guard's negative control must itself be able to fail
+        working-directory: packages/x402-op-authorize
+        run: |
+          # Break registry_state so a missing version reads as present, and require the guard to
+          # refuse naming its own instrument. Without this, a guard whose registry lookup silently
+          # stopped working would wave every publish through and this workflow would stay green.
+          sed 's/  echo free; return/  echo taken; return/' ../../scripts/refuse-dirty-publish.sh > /tmp/broken-guard.sh
+          OUT="$(bash /tmp/broken-guard.sh 2>&1 || true)"
+          if ! printf '%s' "$OUT" | grep -q "CONTROL FAILED"; then
+            echo "::error::the guard's own negative control did not fire when registry_state was broken"
+            exit 1
+          fi
+          echo "negative control fired, naming the instrument"
