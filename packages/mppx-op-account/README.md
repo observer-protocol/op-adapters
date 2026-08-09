@@ -25,11 +25,11 @@
 > Tiers for all seven Observer Protocol adapters are listed together in
 > [`op-policy-engine`](https://github.com/observer-protocol/op-policy-engine#adapter-support-tiers).
 
-> **Provenance.** This repository is the source of the currently published version of
-> `@observer-protocol/mppx-op-account`, republished as a single snapshot each time the package is
-> published. It makes no promise to track anything between releases: the tree either is the
-> published version's source, or the package has not been published since it was written.
-> Development history lives in a private build repository and is deliberately not published here.
+> **Snapshot discipline.** This package is republished as a single snapshot each time it is
+> published; it makes no promise to track anything between releases. **No published version of
+> `@observer-protocol/mppx-op-account` was published from this repository** — see the Provenance note
+> above for where each version resolves. The build history that produced `0.2.0`-`0.3.0` is on the
+> unmerged `provenance/pre-monorepo` branch of `observer-protocol/mppx-op-account`.
 >
 > **Current: `0.3.1`.** Do not take that on trust. The package ships **built output**, not this
 > source tree, so a directory diff against the tarball will not match. Check it like this:
